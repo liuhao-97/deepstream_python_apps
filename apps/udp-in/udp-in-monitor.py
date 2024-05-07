@@ -28,6 +28,10 @@ from common.bus_call import bus_call
 
 import pyds
 
+os.environ["GST_DEBUG_DUMP_DOT_DIR"] = os.getcwd()
+os.putenv('GST_DEBUG_DUMP_DIR_DIR', os.getcwd())
+
+
 PGIE_CLASS_ID_VEHICLE = 0
 PGIE_CLASS_ID_BICYCLE = 1
 PGIE_CLASS_ID_PERSON = 2
@@ -269,6 +273,8 @@ def main(args):
         sys.stderr.write(" Unable to get sink pad of nvosd \n")
 
     osdsinkpad.add_probe(Gst.PadProbeType.BUFFER, osd_sink_pad_buffer_probe, 0)
+
+    Gst.debug_bin_to_dot_file(pipeline, Gst.DebugGraphDetails.ALL, "pipeline")
 
     # start play back and listen to events
     print("Starting pipeline \n")
