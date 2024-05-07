@@ -121,10 +121,10 @@ def osd_sink_pad_buffer_probe(pad,info,u_data):
 
 
 def main(args):
-    # Check input arguments
-    if len(args) != 2:
-        sys.stderr.write("usage: %s <media file or uri>\n" % args[0])
-        sys.exit(1)
+    # # Check input arguments
+    # if len(args) != 2:
+    #     sys.stderr.write("usage: %s <media file or uri>\n" % args[0])
+    #     sys.exit(1)
 
     # Standard GStreamer initialization
     Gst.init(None)
@@ -137,11 +137,29 @@ def main(args):
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline \n")
 
-    # Source element for reading from the file
-    print("Creating Source \n ")
-    source = Gst.ElementFactory.make("filesrc", "file-source")
+    # # Source element for reading from the file
+    # print("Creating Source \n ")
+    # source = Gst.ElementFactory.make("filesrc", "file-source")
+    # if not source:
+    #     sys.stderr.write(" Unable to create Source \n")
+
+    updsrc_port_num=8554
+    # source = Gst.ElementFactory.make('udpsrc', 'rtcpsrc')
+    source = Gst.ElementFactory.make('udpsrc', 'udp-source')
     if not source:
         sys.stderr.write(" Unable to create Source \n")
+    source.set_property('port', updsrc_port_num)
+    # Caps for H.264
+    caps = Gst.caps_from_string("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96")
+    source.set_property('caps', caps)
+
+
+    # Create RTP H264 Depayloader
+    print("Creating RTP H264 Depayloader")
+    depay = Gst.ElementFactory.make("rtph264depay", "rtp-h264-depayloader")
+    if not depay:
+        sys.stderr.write("Unable to create RTP H264 Depayloader\n")
+    
 
     # Since the data format in the input file is elementary h264 stream,
     # we need a h264parser
@@ -149,6 +167,9 @@ def main(args):
     h264parser = Gst.ElementFactory.make("h264parse", "h264-parser")
     if not h264parser:
         sys.stderr.write(" Unable to create h264 parser \n")
+
+
+ 
 
     # Use nvdec_h264 for hardware accelerated decode on GPU
     print("Creating Decoder \n")
@@ -190,8 +211,8 @@ def main(args):
         if not sink:
             sys.stderr.write(" Unable to create egl sink \n")
 
-    print("Playing file %s " %args[1])
-    source.set_property('location', args[1])
+    # print("Playing file %s " %args[1])
+    # source.set_property('location', args[1])
     if os.environ.get('USE_NEW_NVSTREAMMUX') != 'yes': # Only set these properties if not using new gst-nvstreammux
         streammux.set_property('width', 1920)
         streammux.set_property('height', 1080)
@@ -202,6 +223,7 @@ def main(args):
 
     print("Adding elements to Pipeline \n")
     pipeline.add(source)
+    pipeline.add(depay)
     pipeline.add(h264parser)
     pipeline.add(decoder)
     pipeline.add(streammux)
@@ -214,13 +236,17 @@ def main(args):
     # file-source -> h264-parser -> nvh264-decoder ->
     # nvinfer -> nvvidconv -> nvosd -> video-renderer
     print("Linking elements in the Pipeline \n")
-    source.link(h264parser)
+    # source.link(h264parser)
+    # h264parser.link(decoder)
+    source.link(depay)
+    depay.link(h264parser)
     h264parser.link(decoder)
 
     sinkpad = streammux.get_request_pad("sink_0")
     if not sinkpad:
         sys.stderr.write(" Unable to get the sink pad of streammux \n")
     srcpad = decoder.get_static_pad("src")
+    # srcpad = source.get_static_pad('src')
     if not srcpad:
         sys.stderr.write(" Unable to get source pad of decoder \n")
     srcpad.link(sinkpad)
