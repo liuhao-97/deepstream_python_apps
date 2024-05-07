@@ -32,14 +32,35 @@ Yet, we need to install the introspection typelib package:
 $ sudo apt-get install libgirepository1.0-dev
 $ sudo apt-get install gobject-introspection gir1.2-gst-rtsp-server-1.0
 
+## This folder is changed from deepstream_test1_rtsp_out.
+
+# How to use 
+
+The sender(PC) sends h264 video from filesrc to the receiver(Jetson AGX Orin) by udp.
+
+NOTICE there is no nvinfer because I don't have GPU on sender.
+
+The Jetson run
+  ``
+  gst-launch-1.0 -v udpsrc port=5400 caps="application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96" ! rtph264depay ! h264parse ! nvv4l2decoder ! autovideosink
+  ``
+
+Then RUN on sender:
+  $ python3 filesrc-udp-out.py -i /opt/nvidia/deepstream/deepstream-6.3/samples/streams/sample_720p.h264
+
+
+ 
+
+# The original README
+===================================================
+
 To get test app usage information:
   $ python3 deepstream_test1_rtsp_out.py -h
   
 To run the test app with default settings:
   $ python3 deepstream_test1_rtsp_out.py -i <h264_elementary_stream>
   
-Default RTSP streaming location:
-  rtsp://<server IP>:8554/ds-test
+
 
 This document shall describe the sample deepstream-test1-rtsp-out application.
 

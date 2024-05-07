@@ -28,7 +28,7 @@ from gi.repository import GLib, Gst, GstRtspServer
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 
-import pyds
+# import pyds
 
 PGIE_CLASS_ID_VEHICLE = 0
 PGIE_CLASS_ID_BICYCLE = 1
@@ -144,54 +144,7 @@ def main(args):
     if not h264parser:
         sys.stderr.write(" Unable to create h264 parser \n")
     
-    # Use nvdec_h264 for hardware accelerated decode on GPU
-    print("Creating Decoder \n")
-    decoder = Gst.ElementFactory.make("nvv4l2decoder", "nvv4l2-decoder")
-    if not decoder:
-        sys.stderr.write(" Unable to create Nvv4l2 Decoder \n")
-    
-    # Create nvstreammux instance to form batches from one or more sources.
-    streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
-    if not streammux:
-        sys.stderr.write(" Unable to create NvStreamMux \n")
-    
-    # Use nvinfer to run inferencing on decoder's output,
-    # behaviour of inferencing is set through config file
-    pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
-    if not pgie:
-        sys.stderr.write(" Unable to create pgie \n")
-    
-    # Use convertor to convert from NV12 to RGBA as required by nvosd
-    nvvidconv = Gst.ElementFactory.make("nvvideoconvert", "convertor")
-    if not nvvidconv:
-        sys.stderr.write(" Unable to create nvvidconv \n")
-    
-    # Create OSD to draw on the converted RGBA buffer
-    nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
-    if not nvosd:
-        sys.stderr.write(" Unable to create nvosd \n")
-    nvvidconv_postosd = Gst.ElementFactory.make("nvvideoconvert", "convertor_postosd")
-    if not nvvidconv_postosd:
-        sys.stderr.write(" Unable to create nvvidconv_postosd \n")
-    
-    # Create a caps filter
-    caps = Gst.ElementFactory.make("capsfilter", "filter")
-    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), format=I420"))
-    
-    # Make the encoder
-    if codec == "H264":
-        encoder = Gst.ElementFactory.make("nvv4l2h264enc", "encoder")
-        print("Creating H264 Encoder")
-    elif codec == "H265":
-        encoder = Gst.ElementFactory.make("nvv4l2h265enc", "encoder")
-        print("Creating H265 Encoder")
-    if not encoder:
-        sys.stderr.write(" Unable to create encoder")
-    encoder.set_property('bitrate', bitrate)
-    if is_aarch64():
-        encoder.set_property('preset-level', 1)
-        encoder.set_property('insert-sps-pps', 1)
-        #encoder.set_property('bufapi-version', 1)
+
     
     # Make the payload-encode video into RTP packets
     if codec == "H264":
@@ -209,31 +162,18 @@ def main(args):
     if not sink:
         sys.stderr.write(" Unable to create udpsink")
     
-    sink.set_property('host', '224.224.255.255')
+    sink.set_property('host', '10.68.187.189')
     sink.set_property('port', updsink_port_num)
     sink.set_property('async', False)
     sink.set_property('sync', 1)
     
     print("Playing file %s " %stream_path)
     source.set_property('location', stream_path)
-    streammux.set_property('width', 1920)
-    streammux.set_property('height', 1080)
-    streammux.set_property('batch-size', 1)
-    streammux.set_property('batched-push-timeout', 4000000)
     
-    pgie.set_property('config-file-path', "dstest1_pgie_config.txt")
     
     print("Adding elements to Pipeline \n")
     pipeline.add(source)
     pipeline.add(h264parser)
-    pipeline.add(decoder)
-    pipeline.add(streammux)
-    pipeline.add(pgie)
-    pipeline.add(nvvidconv)
-    pipeline.add(nvosd)
-    pipeline.add(nvvidconv_postosd)
-    pipeline.add(caps)
-    pipeline.add(encoder)
     pipeline.add(rtppay)
     pipeline.add(sink)
 
@@ -244,24 +184,9 @@ def main(args):
     
     print("Linking elements in the Pipeline \n")
     source.link(h264parser)
-    h264parser.link(decoder)
-    sinkpad = streammux.get_request_pad("sink_0")
-    if not sinkpad:
-        sys.stderr.write(" Unable to get the sink pad of streammux \n")
-    
-    srcpad = decoder.get_static_pad("src")
-    if not srcpad:
-        sys.stderr.write(" Unable to get source pad of decoder \n")
-    
-    srcpad.link(sinkpad)
-    streammux.link(pgie)
-    pgie.link(nvvidconv)
-    nvvidconv.link(nvosd)
-    nvosd.link(nvvidconv_postosd)
-    nvvidconv_postosd.link(caps)
-    caps.link(encoder)
-    encoder.link(rtppay)
+    h264parser.link(rtppay)
     rtppay.link(sink)
+    
     
     # create an event loop and feed gstreamer bus mesages to it
     loop = GLib.MainLoop()
@@ -269,28 +194,6 @@ def main(args):
     bus.add_signal_watch()
     bus.connect ("message", bus_call, loop)
     
-    # Start streaming
-    rtsp_port_num = 8554
-    
-    server = GstRtspServer.RTSPServer.new()
-    server.props.service = "%d" % rtsp_port_num
-    server.attach(None)
-    
-    factory = GstRtspServer.RTSPMediaFactory.new()
-    factory.set_launch( "( udpsrc name=pay0 port=%d buffer-size=524288 caps=\"application/x-rtp, media=video, clock-rate=90000, encoding-name=(string)%s, payload=96 \" )" % (updsink_port_num, codec))
-    factory.set_shared(True)
-    server.get_mount_points().add_factory("/ds-test", factory)
-    
-    print("\n *** DeepStream: Launched RTSP Streaming at rtsp://localhost:%d/ds-test ***\n\n" % rtsp_port_num)
-    
-    # Lets add probe to get informed of the meta data generated, we add probe to
-    # the sink pad of the osd element, since by that time, the buffer would have
-    # had got all the metadata.
-    osdsinkpad = nvosd.get_static_pad("sink")
-    if not osdsinkpad:
-        sys.stderr.write(" Unable to get sink pad of nvosd \n")
-    
-    osdsinkpad.add_probe(Gst.PadProbeType.BUFFER, osd_sink_pad_buffer_probe, 0)
     
     # start play back and listen to events
     print("Starting pipeline \n")
