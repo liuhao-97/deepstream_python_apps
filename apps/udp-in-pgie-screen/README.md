@@ -3,17 +3,19 @@ This folder is a modified version of the original deepstream-test1 app. The orig
 The receiver(Jetson AGX Orin) receives h264 video from sender(PC) by udp, execute pgie, and show video with result on screen.
 
 The Jetson run
-  $ python3 udp-in-pgie-screen.py
-  
+``
+python3 udp-in-pgie-screen.py
+``
 
 Then RUN on sender:
-  $ gst-launch-1.0 -v filesrc location=/opt/nvidia/deepstream/deepstream-6.3/samples/streams/sample_720p.h264 ! h264parse ! rtph264pay ! udpsink host=10.68.187.189 port=5400
-
+``
+gst-launch-1.0 -v filesrc location=/opt/nvidia/deepstream/deepstream-6.3/samples/streams/sample_720p.h264 ! h264parse ! rtph264pay ! udpsink host=10.68.187.189 port=5400
+``
 
 You should see video with objective detector result on the screen.
 
 
-![alt text](https://github.com/liuhao-97/deepstream_python_apps/blob/nvaie-3.0/apps/udp-in-pgie-screen/pipeline.png)
+![pipeline](https://github.com/liuhao-97/deepstream_python_apps/blob/nvaie-3.0/apps/udp-in-pgie-screen/pipeline.png)
 
 
 
