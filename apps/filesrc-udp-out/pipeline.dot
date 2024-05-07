@@ -1,0 +1,95 @@
+digraph pipeline {
+  rankdir=LR;
+  fontname="sans";
+  fontsize="10";
+  labelloc=t;
+  nodesep=.1;
+  ranksep=.2;
+  label="<GstPipeline>\npipeline0\n[0]";
+  node [style="filled,rounded", shape=box, fontsize="9", fontname="sans", margin="0.0,0.0"];
+  edge [labelfontsize="6", fontsize="9", fontname="monospace"];
+  
+  legend [
+    pos="0,0!",
+    margin="0.05,0.05",
+    style="filled",
+    label="Legend\lElement-States: [~] void-pending, [0] null, [-] ready, [=] paused, [>] playing\lPad-Activation: [-] none, [>] push, [<] pull\lPad-Flags: [b]locked, [f]lushing, [b]locking, [E]OS; upper-case is set\lPad-Task: [T] has started task, [t] has paused task\l",
+  ];
+  subgraph cluster_udpsink_0xeb2240 {
+    fontname="Bitstream Vera Sans";
+    fontsize="8";
+    style="filled,rounded";
+    color=black;
+    label="GstUDPSink\nudpsink\n[0]\nparent=(GstPipeline) pipeline0\nasync=FALSE\nclients=\"10.68.187.189:5400\"\nhost=\"10.68.187.189\"\nport=5400";
+    subgraph cluster_udpsink_0xeb2240_sink {
+      label="";
+      style="invis";
+      udpsink_0xeb2240_sink_0xe96d80 [color=black, fillcolor="#aaaaff", label="sink\n[-][bFb]", height="0.2", style="filled,solid"];
+    }
+
+    fillcolor="#aaaaff";
+  }
+
+  subgraph cluster_rtppay_0xeaa0d0 {
+    fontname="Bitstream Vera Sans";
+    fontsize="8";
+    style="filled,rounded";
+    color=black;
+    label="GstRtpH264Pay\nrtppay\n[0]\nparent=(GstPipeline) pipeline0\nstats=application/x-rtp-payload-stats, clock-rate=(uint)0, running-time=(guint64)18446…";
+    subgraph cluster_rtppay_0xeaa0d0_sink {
+      label="";
+      style="invis";
+      rtppay_0xeaa0d0_sink_0xe96b30 [color=black, fillcolor="#aaaaff", label="sink\n[-][bFb]", height="0.2", style="filled,solid"];
+    }
+
+    subgraph cluster_rtppay_0xeaa0d0_src {
+      label="";
+      style="invis";
+      rtppay_0xeaa0d0_src_0xe968e0 [color=black, fillcolor="#ffaaaa", label="src\n[-][bFb]", height="0.2", style="filled,solid"];
+    }
+
+    rtppay_0xeaa0d0_sink_0xe96b30 -> rtppay_0xeaa0d0_src_0xe968e0 [style="invis"];
+    fillcolor="#aaffaa";
+  }
+
+  rtppay_0xeaa0d0_src_0xe968e0 -> udpsink_0xeb2240_sink_0xe96d80 [labeldistance="10", labelangle="0", label="                                                  ", taillabel="application/x-rtp\l               media: video\l             payload: [ 96, 127 ]\l          clock-rate: 90000\l       encoding-name: H264\l", headlabel="ANY"]
+  subgraph cluster_h264_parser_0xe9a1a0 {
+    fontname="Bitstream Vera Sans";
+    fontsize="8";
+    style="filled,rounded";
+    color=black;
+    label="GstH264Parse\nh264-parser\n[0]\nparent=(GstPipeline) pipeline0";
+    subgraph cluster_h264_parser_0xe9a1a0_sink {
+      label="";
+      style="invis";
+      h264_parser_0xe9a1a0_sink_0xe96440 [color=black, fillcolor="#aaaaff", label="sink\n[-][bFb]", height="0.2", style="filled,solid"];
+    }
+
+    subgraph cluster_h264_parser_0xe9a1a0_src {
+      label="";
+      style="invis";
+      h264_parser_0xe9a1a0_src_0xe96690 [color=black, fillcolor="#ffaaaa", label="src\n[-][bFb]", height="0.2", style="filled,solid"];
+    }
+
+    h264_parser_0xe9a1a0_sink_0xe96440 -> h264_parser_0xe9a1a0_src_0xe96690 [style="invis"];
+    fillcolor="#aaffaa";
+  }
+
+  h264_parser_0xe9a1a0_src_0xe96690 -> rtppay_0xeaa0d0_sink_0xe96b30 [labeldistance="10", labelangle="0", label="                                                  ", taillabel="video/x-h264\l              parsed: true\l       stream-format: { (string)avc, (stri... }\l           alignment: { (string)au, (strin... }\l", headlabel="video/x-h264\l       stream-format: avc\l           alignment: au\lvideo/x-h264\l       stream-format: byte-stream\l           alignment: { (string)nal, (stri... }\l"]
+  subgraph cluster_file_source_0xe94200 {
+    fontname="Bitstream Vera Sans";
+    fontsize="8";
+    style="filled,rounded";
+    color=black;
+    label="GstFileSrc\nfile-source\n[0]\nparent=(GstPipeline) pipeline0\nlocation=\"/opt/nvidia/deepstream/deepstream-6.3/samples/streams/sample_720p.h264\"";
+    subgraph cluster_file_source_0xe94200_src {
+      label="";
+      style="invis";
+      file_source_0xe94200_src_0xe961f0 [color=black, fillcolor="#ffaaaa", label="src\n[-][bFb]", height="0.2", style="filled,solid"];
+    }
+
+    fillcolor="#ffaaaa";
+  }
+
+  file_source_0xe94200_src_0xe961f0 -> h264_parser_0xe9a1a0_sink_0xe96440 [labeldistance="10", labelangle="0", label="                                                  ", taillabel="ANY", headlabel="video/x-h264\l"]
+}

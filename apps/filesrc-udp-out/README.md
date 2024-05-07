@@ -1,19 +1,31 @@
-################################################################################
-# SPDX-FileCopyrightText: Copyright (c) 2020-2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-################################################################################
+This folder is changed from deepstream_test1_rtsp_out.
+
+file-source -> h264-parser -> rtppay -> udpsink
+
+The sender(PC) sends h264 video from filesrc to the receiver(Jetson AGX Orin) by udp.
+
+NOTICE there is no nvinfer because I don't have GPU on sender.
+
+The Jetson run
+
+``
+gst-launch-1.0 -v udpsrc port=5400 caps="application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96" ! rtph264depay ! h264parse ! nvv4l2decoder ! autovideosink
+``
+
+Then RUN on sender:
+
+``
+python3 filesrc-udp-out.py -i /opt/nvidia/deepstream/deepstream-6.3/samples/streams/sample_720p.h264
+``
+
+
+![pipeline](https://github.com/liuhao-97/deepstream_python_apps/blob/nvaie-3.0/apps/filesrc-udp-out/pipeline.png)
+
+
+
+
+# The original README
+
 
 Prequisites:
 - DeepStreamSDK 6.2
@@ -22,7 +34,7 @@ Prequisites:
 - GstRtspServer
 
 Installing GstRtspServer and instrospection typelib
-===================================================
+
 $ sudo apt update
 $ sudo apt-get install libgstrtspserver-1.0-0 gstreamer1.0-rtsp
 For gst-rtsp-server (and other GStreamer stuff) to be accessible in
@@ -32,27 +44,6 @@ Yet, we need to install the introspection typelib package:
 $ sudo apt-get install libgirepository1.0-dev
 $ sudo apt-get install gobject-introspection gir1.2-gst-rtsp-server-1.0
 
-
-
-## This folder is changed from deepstream_test1_rtsp_out.
-# How to use 
-
-The sender(PC) sends h264 video from filesrc to the receiver(Jetson AGX Orin) by udp.
-
-NOTICE there is no nvinfer because I don't have GPU on sender.
-
-The Jetson run
-  $ gst-launch-1.0 -v udpsrc port=5400 caps="application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96" ! rtph264depay ! h264parse ! nvv4l2decoder ! autovideosink
-  
-
-Then RUN on sender:
-  $ python3 filesrc-udp-out.py -i /opt/nvidia/deepstream/deepstream-6.3/samples/streams/sample_720p.h264
-
-
- 
-
-# The original README
-===================================================
 
 To get test app usage information:
   $ python3 deepstream_test1_rtsp_out.py -h

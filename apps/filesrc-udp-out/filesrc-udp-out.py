@@ -30,6 +30,12 @@ from common.bus_call import bus_call
 
 # import pyds
 
+# if want to draw pipeline dot
+import os
+# os.environ["GST_DEBUG_DUMP_DOT_DIR"] = os.getcwd()
+# os.putenv('GST_DEBUG_DUMP_DIR_DIR', os.getcwd())
+
+
 PGIE_CLASS_ID_VEHICLE = 0
 PGIE_CLASS_ID_BICYCLE = 1
 PGIE_CLASS_ID_PERSON = 2
@@ -194,7 +200,9 @@ def main(args):
     bus.add_signal_watch()
     bus.connect ("message", bus_call, loop)
     
-    
+    # if want to draw pipeline dot
+    # Gst.debug_bin_to_dot_file(pipeline, Gst.DebugGraphDetails.ALL, "pipeline")
+
     # start play back and listen to events
     print("Starting pipeline \n")
     pipeline.set_state(Gst.State.PLAYING)
