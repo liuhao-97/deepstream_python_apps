@@ -147,7 +147,7 @@ def main(args):
     # if not source:
     #     sys.stderr.write(" Unable to create Source \n")
 
-    updsrc_port_num=8554
+    updsrc_port_num=5400
     # source = Gst.ElementFactory.make('udpsrc', 'rtcpsrc')
     source = Gst.ElementFactory.make('udpsrc', 'udp-source')
     if not source:
