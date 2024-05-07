@@ -32,8 +32,9 @@ Yet, we need to install the introspection typelib package:
 $ sudo apt-get install libgirepository1.0-dev
 $ sudo apt-get install gobject-introspection gir1.2-gst-rtsp-server-1.0
 
-## This folder is changed from deepstream_test1_rtsp_out.
 
+
+## This folder is changed from deepstream_test1_rtsp_out.
 # How to use 
 
 The sender(PC) sends h264 video from filesrc to the receiver(Jetson AGX Orin) by udp.
