@@ -28,8 +28,9 @@ from common.bus_call import bus_call
 
 import pyds
 
-os.environ["GST_DEBUG_DUMP_DOT_DIR"] = os.getcwd()
-os.putenv('GST_DEBUG_DUMP_DIR_DIR', os.getcwd())
+# if want to draw pipeline dot
+# os.environ["GST_DEBUG_DUMP_DOT_DIR"] = os.getcwd()
+# os.putenv('GST_DEBUG_DUMP_DIR_DIR', os.getcwd())
 
 
 PGIE_CLASS_ID_VEHICLE = 0
@@ -274,7 +275,8 @@ def main(args):
 
     osdsinkpad.add_probe(Gst.PadProbeType.BUFFER, osd_sink_pad_buffer_probe, 0)
 
-    Gst.debug_bin_to_dot_file(pipeline, Gst.DebugGraphDetails.ALL, "pipeline")
+    # if want to draw pipeline dot
+    # Gst.debug_bin_to_dot_file(pipeline, Gst.DebugGraphDetails.ALL, "pipeline")
 
     # start play back and listen to events
     print("Starting pipeline \n")
