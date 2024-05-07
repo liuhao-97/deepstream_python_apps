@@ -28,20 +28,7 @@ Then RUN on sender:
   $ gst-launch-1.0 -v filesrc location=/opt/nvidia/deepstream/deepstream-6.3/samples/streams/sample_720p.h264 ! h264parse ! rtph264pay ! udpsink host=10.68.187.189 port=5400
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+You should see video with objective detector result on the screen.
 
 
 
