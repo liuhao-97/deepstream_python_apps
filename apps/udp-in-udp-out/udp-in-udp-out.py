@@ -20,7 +20,7 @@ import sys
 sys.path.append("../")
 from common.bus_call import bus_call
 from common.is_aarch_64 import is_aarch64
-import pyds
+# import pyds
 import platform
 import math
 import time
