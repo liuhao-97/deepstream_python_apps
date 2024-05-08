@@ -229,26 +229,26 @@ def main(args):
     if not h264parser:
         sys.stderr.write(" Unable to create h264 parser \n")
 
-    # # Use nvdec_h264 for hardware accelerated decode on GPU
-    # print("Creating Decoder \n")
-    # decoder = Gst.ElementFactory.make("nvv4l2decoder", "nvv4l2-decoder")
-    # if not decoder:
-    #     sys.stderr.write(" Unable to create Nvv4l2 Decoder \n")
+    # Use nvdec_h264 for hardware accelerated decode on GPU
+    print("Creating Decoder \n")
+    decoder = Gst.ElementFactory.make("nvv4l2decoder", "nvv4l2-decoder")
+    if not decoder:
+        sys.stderr.write(" Unable to create Nvv4l2 Decoder \n")
 
-    # # Make the encoder
-    # if codec == "H264":
-    #     encoder = Gst.ElementFactory.make("nvv4l2h264enc", "encoder")
-    #     print("Creating H264 Encoder")
-    # elif codec == "H265":
-    #     encoder = Gst.ElementFactory.make("nvv4l2h265enc", "encoder")
-    #     print("Creating H265 Encoder")
-    # if not encoder:
-    #     sys.stderr.write(" Unable to create encoder")
-    # encoder.set_property("bitrate", bitrate)
-    # if is_aarch64():
-    #     encoder.set_property("preset-level", 1)
-    #     encoder.set_property("insert-sps-pps", 1)
-    #     #encoder.set_property("bufapi-version", 1)
+    # Make the encoder
+    if codec == "H264":
+        encoder = Gst.ElementFactory.make("nvv4l2h264enc", "encoder")
+        print("Creating H264 Encoder")
+    elif codec == "H265":
+        encoder = Gst.ElementFactory.make("nvv4l2h265enc", "encoder")
+        print("Creating H265 Encoder")
+    if not encoder:
+        sys.stderr.write(" Unable to create encoder")
+    encoder.set_property("bitrate", bitrate)
+    if is_aarch64():
+        encoder.set_property("preset-level", 1)
+        encoder.set_property("insert-sps-pps", 1)
+        #encoder.set_property("bufapi-version", 1)
 
     # Make the payload-encode video into RTP packets
     if codec == "H264":
@@ -274,22 +274,17 @@ def main(args):
     pipeline.add(source)
     pipeline.add(depay)
     pipeline.add(h264parser)
-    # pipeline.add(decoder)
-    # pipeline.add(encoder)
+    pipeline.add(decoder)
+    pipeline.add(encoder)
     pipeline.add(rtppay)
     pipeline.add(sink)
 
 
-    # source.link(depay)
-    # depay.link(h264parser)
-    # h264parser.link(decoder)
-    # decoder.link(encoder)
-    # encoder.link(rtppay)
-    # rtppay.link(sink)
-    
     source.link(depay)
     depay.link(h264parser)
-    h264parser.link(rtppay)
+    h264parser.link(decoder)
+    decoder.link(encoder)
+    encoder.link(rtppay)
     rtppay.link(sink)
 
     # create an event loop and feed gstreamer bus mesages to it
