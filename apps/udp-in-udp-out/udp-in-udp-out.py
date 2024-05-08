@@ -235,41 +235,7 @@ def main(args):
     if not decoder:
         sys.stderr.write(" Unable to create Nvv4l2 Decoder \n")
 
-    # Create nvstreammux instance to form batches from one or more sources.
-    streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
-    if not streammux:
-        sys.stderr.write(" Unable to create NvStreamMux \n")
-
-
-    print("Creating Pgie \n ")
-    if gie=="nvinfer":
-        pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
-    else:
-        pgie = Gst.ElementFactory.make("nvinferserver", "primary-inference")
-    if not pgie:
-        sys.stderr.write(" Unable to create pgie \n")
-    print("Creating tiler \n ")
-    tiler = Gst.ElementFactory.make("nvmultistreamtiler", "nvtiler")
-    if not tiler:
-        sys.stderr.write(" Unable to create tiler \n")
-    print("Creating nvvidconv \n ")
-    nvvidconv = Gst.ElementFactory.make("nvvideoconvert", "convertor")
-    if not nvvidconv:
-        sys.stderr.write(" Unable to create nvvidconv \n")
-    print("Creating nvosd \n ")
-    nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
-    if not nvosd:
-        sys.stderr.write(" Unable to create nvosd \n")
-    nvvidconv_postosd = Gst.ElementFactory.make(
-        "nvvideoconvert", "convertor_postosd")
-    if not nvvidconv_postosd:
-        sys.stderr.write(" Unable to create nvvidconv_postosd \n")
-
-    # Create a caps filter
-    caps = Gst.ElementFactory.make("capsfilter", "filter")
-    caps.set_property(
-        "caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), format=I420")
-    )
+ 
 
     # Make the encoder
     if codec == "H264":
@@ -306,50 +272,11 @@ def main(args):
     sink.set_property("port", updsink_port_num)
     sink.set_property("async", False)
     sink.set_property("sync", 1)
-
-    streammux.set_property("width", 1920)
-    streammux.set_property("height", 1080)
-    streammux.set_property("batch-size", 1)
-    streammux.set_property("batched-push-timeout", 4000000)
-
-    if gie=="nvinfer":
-        pgie.set_property("config-file-path", "dstest1_pgie_config.txt")
-    else:
-        pgie.set_property("config-file-path", "dstest1_pgie_inferserver_config.txt")
-
-
-    pgie_batch_size = pgie.get_property("batch-size")
-    if pgie_batch_size != number_sources:
-        print(
-            "WARNING: Overriding infer-config batch-size",
-            pgie_batch_size,
-            " with number of sources ",
-            number_sources,
-            " \n",
-        )
-        pgie.set_property("batch-size", number_sources)
-
-    print("Adding elements to Pipeline \n")
-    tiler_rows = int(math.sqrt(number_sources))
-    tiler_columns = int(math.ceil((1.0 * number_sources) / tiler_rows))
-    tiler.set_property("rows", tiler_rows)
-    tiler.set_property("columns", tiler_columns)
-    tiler.set_property("width", TILED_OUTPUT_WIDTH)
-    tiler.set_property("height", TILED_OUTPUT_HEIGHT)
-    sink.set_property("qos", 0)
-    
     
     pipeline.add(source)
     pipeline.add(depay)
     pipeline.add(h264parser)
     pipeline.add(decoder)
-    pipeline.add(streammux)
-    pipeline.add(pgie)
-    pipeline.add(tiler)
-    pipeline.add(nvvidconv)
-    pipeline.add(nvosd)
-    pipeline.add(nvvidconv_postosd)
-    pipeline.add(caps)
     pipeline.add(encoder)
     pipeline.add(rtppay)
     pipeline.add(sink)
@@ -358,21 +285,7 @@ def main(args):
     source.link(depay)
     depay.link(h264parser)
     h264parser.link(decoder)
-
-    sinkpad = streammux.get_request_pad("sink_0")
-    if not sinkpad:
-        sys.stderr.write(" Unable to get the sink pad of streammux \n")
-    srcpad = decoder.get_static_pad("src")
-    if not srcpad:
-        sys.stderr.write(" Unable to get source pad of decoder \n")
-    srcpad.link(sinkpad)
-    streammux.link(pgie)
-    pgie.link(nvvidconv)
-    nvvidconv.link(tiler)
-    tiler.link(nvosd)
-    nvosd.link(nvvidconv_postosd)
-    nvvidconv_postosd.link(caps)
-    caps.link(encoder)
+    decoder.link(encoder)
     encoder.link(rtppay)
     rtppay.link(sink)
 
