@@ -226,7 +226,7 @@ def main(args):
     if not sink:
         sys.stderr.write(" Unable to create udpsink")
     
-    sink.set_property('host', '10.68.187.189')
+    sink.set_property('host', '10.68.186.155')
     sink.set_property('port', updsink_port_num)
     sink.set_property('async', False)
     sink.set_property('sync', 1)
